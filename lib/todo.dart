@@ -1,9 +1,8 @@
 class Todo {
-  final String id;
+  final int id;
   final String title;
   final String description;
   final bool completed;
-
   Todo({
     required this.id,
     required this.title,
@@ -22,10 +21,10 @@ class Todo {
 
   factory Todo.fromMap(Map<String, dynamic> map) {
     return Todo(
-      id: map['id'] as String,
+      id: map['id'] as int,
       title: map['title'] as String,
       description: map['description'] as String,
-      completed: map['completed'] as bool,
+      completed: map['completed'] == 0 ? false : true,
     );
   }
 }

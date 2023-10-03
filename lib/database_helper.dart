@@ -39,7 +39,7 @@ class DatabaseHelper {
         CREATE TABLE 
         IF NOT EXISTS todos 
         (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          id INTEGER PRIMARY KEY,
           title TEXT NOT NULL,
           description TEXT,
           completed INTEGER NOT NULL

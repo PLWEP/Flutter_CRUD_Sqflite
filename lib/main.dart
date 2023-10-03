@@ -30,10 +30,59 @@ class TodoApp extends StatefulWidget {
 
 class _TodoAppState extends State<TodoApp> {
   final TextEditingController _searchController = TextEditingController();
-  final dbhelper = DatabaseHelper;
-  final List<Todo> _todos = [
-    Todo(id: "01", title: "dummy", description: "deskripsi", completed: true)
-  ];
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _descController = TextEditingController();
+  final dbHelper = DatabaseHelper();
+  List<Todo> _todos = [];
+  int _count = 0;
+
+  void refreshItemList() async {
+    final todos = await dbHelper.getAllTodos();
+    setState(() {
+      _todos = todos;
+    });
+  }
+
+  void searchItems() async {
+    final keyword = _searchController.text.trim();
+    if (keyword.isNotEmpty) {
+      final todos = await dbHelper.getTodoByTitle(keyword);
+      setState(() {
+        _todos = todos;
+      });
+    } else {
+      refreshItemList();
+    }
+  }
+
+  void addItem(String title, String desc) async {
+    final todo =
+        Todo(id: _count, title: title, description: desc, completed: false);
+    await dbHelper.insertTodo(todo);
+    refreshItemList();
+  }
+
+  void updateItem(Todo todo, bool completed) async {
+    final item = Todo(
+      id: todo.id,
+      title: todo.title,
+      description: todo.description,
+      completed: completed,
+    );
+    await dbHelper.updateTodo(item);
+    refreshItemList();
+  }
+
+  void deleteItem(int id) async {
+    await dbHelper.deleteTodo(id);
+    refreshItemList();
+  }
+
+  @override
+  void initState() {
+    refreshItemList();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +101,9 @@ class _TodoAppState extends State<TodoApp> {
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(),
               ),
-              onChanged: (_) {},
+              onChanged: (_) {
+                searchItems();
+              },
             ),
           ),
           Expanded(
@@ -61,18 +112,25 @@ class _TodoAppState extends State<TodoApp> {
               itemBuilder: (context, index) {
                 var todo = _todos[index];
                 return ListTile(
+                  leading: todo.completed
+                      ? IconButton(
+                          icon: const Icon(Icons.check_circle),
+                          onPressed: () {
+                            updateItem(todo, !todo.completed);
+                          },
+                        )
+                      : IconButton(
+                          icon: const Icon(Icons.radio_button_unchecked),
+                          onPressed: () {
+                            updateItem(todo, !todo.completed);
+                          },
+                        ),
                   title: Text(todo.title),
                   subtitle: Text(todo.description),
                   trailing: IconButton(
-                    icon: todo.completed
-                        ? const Icon(Icons.check_box)
-                        : const Icon(Icons.check_box_outline_blank),
+                    icon: const Icon(Icons.delete),
                     onPressed: () {
-                      // setState(() {
-                      //   todo.completed = !todo.completed;
-                      // });
-
-                      // database.updateTodo(todo);
+                      deleteItem(todo.id);
                     },
                   ),
                 );
@@ -87,8 +145,22 @@ class _TodoAppState extends State<TodoApp> {
             context: context,
             builder: (context) => AlertDialog(
               title: const Text('Tambah Todo'),
-              content: const TextField(
-                decoration: InputDecoration(hintText: 'Judul todo'),
+              content: SizedBox(
+                width: 200,
+                height: 200,
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: _titleController,
+                      decoration: const InputDecoration(hintText: 'Judul todo'),
+                    ),
+                    TextField(
+                      controller: _descController,
+                      decoration:
+                          const InputDecoration(hintText: 'Deskripsi todo'),
+                    ),
+                  ],
+                ),
               ),
               actions: [
                 TextButton(
@@ -98,18 +170,12 @@ class _TodoAppState extends State<TodoApp> {
                 TextButton(
                   child: const Text('Tambah'),
                   onPressed: () {
-                    // var todo = Todo(
-                    //   title: TextField.of(context).text,
-                    //   description: '',
-                    //   completed: false,
-                    // );
+                    addItem(_titleController.text, _descController.text);
 
-                    // database.insertTodo(todo);
-
-                    // Navigator.pop(context);
-                    // setState(() {
-                    //   _todos.add(todo);
-                    // });
+                    Navigator.pop(context);
+                    setState(() {
+                      _count = _count + 1;
+                    });
                   },
                 ),
               ],
